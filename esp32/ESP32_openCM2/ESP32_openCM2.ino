@@ -5,6 +5,9 @@
 #include <PubSubClient.h>
 #include <string.h>
 #include <vector>
+#include <stdlib.h>     /* strtod */
+
+#include <pthread.h>
 
 #include <AccelStepper.h>
 
@@ -26,15 +29,15 @@
 
 // saved in strings, so that later (if implemented) e.g. easily changeable via Bluetooth -> to avoid connection errors
 std::string SETUP = "S001";
-std::string COMPONENT = "RAS01";// LAR01 //LED01 // MOT02=x,y // MOT01=z
+std::string COMPONENT = "OCM21";// LAR01 //LED01 // MOT02=x,y // MOT01=z
 std::string DEVICE = "ESP32";
 std::string DEVICENAME;
 std::string CLIENTNAME;
 std::string SETUP_INFO;
 
 // ~~~~  Wifi  ~~~~
-const char *ssid = "_____";
-const char *password = "_____";
+const char *ssid = "__________";
+const char *password = "__________";
 WiFiClient espClient;
 PubSubClient client(espClient);
 // ~~~~  MQTT  ~~~~
@@ -56,9 +59,12 @@ const char *delim_inst = "+";
 const int delim_len = 1;
 
 // ~~~~ MOTOR ~~~~
-AccelStepper stepper_Z = AccelStepper(AccelStepper::FULL4WIRE, 25,26,27,14);
-AccelStepper stepper_Y = AccelStepper(AccelStepper::FULL4WIRE, 5, 17,16, 4);
-AccelStepper stepper_X = AccelStepper(AccelStepper::FULL4WIRE, 33,32,27,14);
+
+AccelStepper stepper_X(AccelStepper::FULL4WIRE, 25,27,26,14);
+AccelStepper stepper_Y(AccelStepper::FULL4WIRE, 5, 17,16, 4);
+AccelStepper stepper_Z(AccelStepper::FULL4WIRE, 33,32,27,14);
+
+int _move_x = 0;
 
 
 // ~~~~ Commands ~~~~
@@ -134,18 +140,15 @@ int separateMessage(byte *message, unsigned int length)
     }
     messageSep[length] = NULL;
     //Serial.println("");
-    Serial.print("Mess=");
+//    Serial.print("Mess=");
     std::string mess(messageSep);
-    Serial.println(mess.c_str());
+//    Serial.println(mess.c_str());
     size_t pos = 0;
     int i = 0;
     bool found_cmd = false;
     while ((pos = mess.find(delim_inst)) != std::string::npos)
     {
-        if (!found_cmd)
-        {
-            //Serial.print("CMD-del@");
-            //Serial.println(pos);
+        if (!found_cmd){
             CMDS = mess.substr(0, pos);
             //Serial.print("CMDS=");
             CMD = CMDS.c_str();
@@ -190,24 +193,20 @@ int separateMessage(byte *message, unsigned int length)
     mess.clear();
 }
 
-void callback(char *topic, byte *message, unsigned int length)
-{
-    Serial.println("Callback-func called.");
-    // test topics
-    if (std::string(topic) == stopicREC){
 
-      // ============= INTERESTING PART  ============= //
+void callback(char *topic, byte *message, unsigned int length){
+
+    if (std::string(topic) == stopicREC){
         int nINST = separateMessage(message, length);
         if (strcmp(CMD, COMMANDSET[0]) == 0){
             if ((int)INSTS[0]==0){
-              stepper_X.stop();
+              _move_x = 0;
             }
             else{
-              stepper_X.move((int)(INSTS[0] * 1000));
-              stepper_X.setSpeed((int)(INSTS[0]));
-              stepper_X.runSpeed();
+              stepper_X.setSpeed((double)INSTS[0]);
+              _move_x = 1; 
             }
-        }
+          }
 //        else if (strcmp(CMD, COMMANDSET[1]) == 0){
 //            stepper_Y.move((int)(INSTS[0] * 1000));
 //            stepper_Y.runSpeed();
@@ -216,26 +215,7 @@ void callback(char *topic, byte *message, unsigned int length)
 //            stepper_Z.move((int)(INSTS[0] * 1000));
 //            stepper_Z.runSpeed();
 //        }
-
-        
-        else{
-            Serial.print("CMD not found.");
-        }
-        
-    }
-    else if (std::string(topic) == stopicSTATUS)
-    {
-        Serial.println(stopicSTATUS.c_str());
-    }
-    else if (std::string(topic) == stopicANNOUNCE)
-    {
-        Serial.println(stopicANNOUNCE.c_str());
-    }
-    else
-    {
-        Serial.print("Assortion Error: Nothing found for topic=");
-        Serial.println(topic);
-    }
+      }
     INSTS.clear();
 }
 
@@ -273,6 +253,22 @@ void reconnect()
 
 // ----------------------------------------------------------------------------------------------------------------
 //                          SETUP
+
+void *client_loop(void *threadid) {
+  while (true){
+    client.loop();
+  }
+}
+
+void *run_motor(void *threadid){
+  while (true){
+    if (_move_x == 1){
+      Serial.print("2");
+      stepper_X.runSpeed();
+    }
+  }
+}
+
 void setup()
 {
     Serial.begin(115200);
@@ -290,11 +286,14 @@ void setup()
     
     client.setCallback(callback);
     time_now = millis();
+    
+    reconnect();
 
+    
     uc2wait(100);
-    stepper_X.setSpeed(10);
-    stepper_Y.setSpeed(10);
-    stepper_Z.setSpeed(10);
+   stepper_X.setMaxSpeed(100);
+   stepper_X.setSpeed(50);  
+     
 }
 // ----------------------------------------------------------------------------------------------------------------
 //                          LOOP
@@ -309,6 +308,9 @@ void loop()
     {
         client.publish(stopicSTATUS.c_str(), "1");
         time_now = millis();
+    }
+    if (_move_x == 1){
+      stepper_X.runSpeed();
     }
 }
 // ----------------------------------------------------------------------------------------------------------------
