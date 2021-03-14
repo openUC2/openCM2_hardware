@@ -36,8 +36,8 @@ std::string CLIENTNAME;
 std::string SETUP_INFO;
 
 // ~~~~  Wifi  ~~~~
-const char *ssid = "__________";
-const char *password = "__________";
+const char *ssid = "_____________";
+const char *password = "_____________";
 WiFiClient espClient;
 PubSubClient client(espClient);
 // ~~~~  MQTT  ~~~~
@@ -60,12 +60,13 @@ const int delim_len = 1;
 
 // ~~~~ MOTOR ~~~~
 
-AccelStepper stepper_X(AccelStepper::FULL4WIRE, 25,27,26,14);
-AccelStepper stepper_Y(AccelStepper::FULL4WIRE, 5, 17,16, 4);
-AccelStepper stepper_Z(AccelStepper::FULL4WIRE, 33,32,27,14);
+AccelStepper stepper_X(AccelStepper::FULL4WIRE, 25, 27, 26, 14); // flipped pins 1 3 2 4
+AccelStepper stepper_Y(AccelStepper::FULL4WIRE,  5, 16, 17,  4); // flipped pins 1 3 2 4
+AccelStepper stepper_Z(AccelStepper::FULL4WIRE, 33, 27, 32, 14); // flipped pins 1 3 2 4
 
 int _move_x = 0;
-
+int _move_y = 0;
+int _move_z = 0;
 
 // ~~~~ Commands ~~~~
 const char *CMD;     //Commands like: PXL -> limited to size of 3?
@@ -73,8 +74,8 @@ int *INST[MAX_INST]; //Maximum number of possible instructions =
 std::vector<int> INSTS;
 std::string CMDS;
 
-const char *COMMANDSET[NCOMMANDS] = {"MM_X", "MM_Y", "MM_Z", "FLUO"};
-const char *INSTRUCTS[NCOMMANDS] = {"1", "1", "1", "1"};
+const char *COMMANDSET[NCOMMANDS] = {"MM_X", "MM_Y", "MM_Z"};
+const char *INSTRUCTS[NCOMMANDS] = {"1", "1", "1"};
 
 // ----------------------------------------------------------------------------------------------------------------
 //                          Additional Functions
@@ -196,26 +197,37 @@ int separateMessage(byte *message, unsigned int length)
 
 void callback(char *topic, byte *message, unsigned int length){
 
-    if (std::string(topic) == stopicREC){
-        int nINST = separateMessage(message, length);
-        if (strcmp(CMD, COMMANDSET[0]) == 0){
-            if ((int)INSTS[0]==0){
-              _move_x = 0;
-            }
-            else{
-              stepper_X.setSpeed((double)INSTS[0]);
-              _move_x = 1; 
-            }
-          }
-//        else if (strcmp(CMD, COMMANDSET[1]) == 0){
-//            stepper_Y.move((int)(INSTS[0] * 1000));
-//            stepper_Y.runSpeed();
-//        }
-//        else if (strcmp(CMD, COMMANDSET[2]) == 0){
-//            stepper_Z.move((int)(INSTS[0] * 1000));
-//            stepper_Z.runSpeed();
-//        }
+  if (std::string(topic) == stopicREC){
+    int nINST = separateMessage(message, length);
+      if (strcmp(CMD, COMMANDSET[0]) == 0){
+        if ((int)INSTS[0]==0){
+          _move_x = 0;
+        }
+        else{
+          stepper_X.setSpeed((double)INSTS[0]);
+          _move_x = 1; 
+        }
       }
+          
+      else if (strcmp(CMD, COMMANDSET[1]) == 0){
+        if ((int)INSTS[0]==0){
+            _move_y = 0;
+        }
+        else{
+            stepper_Y.setSpeed((double)INSTS[0]);
+            _move_y = 1; 
+        }
+      }
+      else if (strcmp(CMD, COMMANDSET[2]) == 0){
+        if ((int)INSTS[0]==0){
+          _move_z = 0;
+        }
+        else{
+          stepper_Z.setSpeed((double)INSTS[0]);
+          _move_z = 1; 
+        }
+      }
+    }
     INSTS.clear();
 }
 
@@ -254,45 +266,43 @@ void reconnect()
 // ----------------------------------------------------------------------------------------------------------------
 //                          SETUP
 
-void *client_loop(void *threadid) {
-  while (true){
-    client.loop();
-  }
-}
+//void *client_loop(void *threadid) {
+//  while (true){
+//    client.loop();
+//  }
+//}
+//
+//void *run_motor(void *threadid){
+//  while (true){
+//    if (_move_x == 1){
+//      Serial.print("2");
+//      stepper_X.runSpeed();
+//    }
+//  }
+//}
 
-void *run_motor(void *threadid){
-  while (true){
-    if (_move_x == 1){
-      Serial.print("2");
-      stepper_X.runSpeed();
-    }
-  }
-}
-
-void setup()
-{
-    Serial.begin(115200);
-    // check for connected motors
-    //status = bme.begin();
-    setup_device_properties();
-    Serial.print("VOID SETUP -> topicSTATUS=");
-    Serial.println(stopicSTATUS.c_str());
-    setup_wifi();
-    Serial.print("Starting to connect MQTT to: ");
-    Serial.print(MQTT_SERVER);
-    Serial.print(" at port:");
-    Serial.println(MQTT_PORT);
-    client.setServer(MQTT_SERVER, MQTT_PORT);
-    
-    client.setCallback(callback);
-    time_now = millis();
-    
-    reconnect();
-
-    
-    uc2wait(100);
-   stepper_X.setMaxSpeed(100);
-   stepper_X.setSpeed(50);  
+void setup(){
+  Serial.begin(115200);
+  // check for connected motors
+  //status = bme.begin();
+  setup_device_properties();
+  Serial.print("VOID SETUP -> topicSTATUS=");
+  Serial.println(stopicSTATUS.c_str());
+  setup_wifi();
+  Serial.print("Starting to connect MQTT to: ");
+  Serial.print(MQTT_SERVER);
+  Serial.print(" at port:");
+  Serial.println(MQTT_PORT);
+  client.setServer(MQTT_SERVER, MQTT_PORT);
+  
+  client.setCallback(callback);
+  time_now = millis();
+  
+  reconnect();
+  
+  uc2wait(100);
+  stepper_X.setMaxSpeed(1000);
+  stepper_X.setSpeed(50);  
      
 }
 // ----------------------------------------------------------------------------------------------------------------
@@ -311,6 +321,12 @@ void loop()
     }
     if (_move_x == 1){
       stepper_X.runSpeed();
+    }
+    if (_move_y == 1){
+      stepper_Y.runSpeed();
+    }
+    if (_move_z == 1){
+      stepper_Z.runSpeed();
     }
 }
 // ----------------------------------------------------------------------------------------------------------------
