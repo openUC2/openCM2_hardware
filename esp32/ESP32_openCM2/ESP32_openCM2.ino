@@ -22,26 +22,33 @@
 #define LED_BUILTIN 11
 #define LED_FLUO_PIN 26
 
+// ======== USER Parameters ======== //
+std::string COMPONENT = "OCM2X";
+//std::string COMPONENT = "OCM2Y";
+//std::string COMPONENT = "OCM2Z";
+
+const char *ssid = "_____________";
+const char *password = "_____________";
+
+const char *MQTT_SERVER = "_____________";
+
 // ----------------------------------------------------------------------------------------------------------------
-//                          Parameters
+// Global Parameters
 // ~~~~ Device ~~~~
 // create Pseudo-random number with temporal dependent input
 
 // saved in strings, so that later (if implemented) e.g. easily changeable via Bluetooth -> to avoid connection errors
 std::string SETUP = "S001";
-std::string COMPONENT = "OCM21";// LAR01 //LED01 // MOT02=x,y // MOT01=z
+
 std::string DEVICE = "ESP32";
 std::string DEVICENAME;
 std::string CLIENTNAME;
 std::string SETUP_INFO;
 
 // ~~~~  Wifi  ~~~~
-const char *ssid = "_____________";
-const char *password = "_____________";
 WiFiClient espClient;
 PubSubClient client(espClient);
 // ~~~~  MQTT  ~~~~
-const char *MQTT_SERVER = "192.168.43.10";
 const int MQTT_PORT = 1883;
 const char *MQTT_CLIENTID;
 const char *MQTT_USER;
@@ -61,8 +68,11 @@ const int delim_len = 1;
 // ~~~~ MOTOR ~~~~
 
 AccelStepper stepper_X(AccelStepper::FULL4WIRE, 25, 27, 26, 14); // flipped pins 1 3 2 4
-AccelStepper stepper_Y(AccelStepper::FULL4WIRE,  5, 16, 17,  4); // flipped pins 1 3 2 4
-AccelStepper stepper_Z(AccelStepper::FULL4WIRE, 33, 27, 32, 14); // flipped pins 1 3 2 4
+AccelStepper stepper_Y(AccelStepper::FULL4WIRE, 25, 27, 26, 14); // flipped pins 1 3 2 4
+AccelStepper stepper_Z(AccelStepper::FULL4WIRE, 25, 27, 26, 14); // flipped pins 1 3 2 4
+
+//AccelStepper stepper_Y(AccelStepper::FULL4WIRE,  5, 16, 17,  4); // flipped pins 1 3 2 4
+//AccelStepper stepper_Z(AccelStepper::FULL4WIRE, 33, 27, 32, 14); // flipped pins 1 3 2 4
 
 int _move_x = 0;
 int _move_y = 0;

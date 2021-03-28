@@ -30,9 +30,7 @@ After you cloned this repository and open [the script](https://github.com/bjks/o
 ```
 const char *ssid = "_____________";
 const char *password = "_____________";
-WiFiClient espClient;
-PubSubClient client(espClient);
-// ~~~~  MQTT  ~~~~
+
 const char *MQTT_SERVER = "_____________";
 ```
 Where you see the placeholder `_____________` you need to write
@@ -50,8 +48,11 @@ When the Serial Monitor shows that the ESP32 is connected to the MQTT server, th
 
 ### 1.3 Add another stepper motor
 In the current setup each motor is powered by its own ESP32. To add a second and a third motor, the new ESP32s need to be flahed as before with one __important distinction__: 
-The line 
+The lines
 ```
-std::string COMPONENT = "OCM21";
+std::string COMPONENT = "OCM2X";
+//std::string COMPONENT = "OCM2Y";
+//std::string COMPONENT = "OCM2Z";
+
 ```
-Needs to be changed to tell the ESP32 to which signal it should listen. That means the `x` motor gets the component name `OCM21`, while the `y` motor gets the name `OCM22` and the `z` motor gets `OCM23`. 
+needs to be changed to tell the ESP32 to which signal it should listen. That means the `x` motor gets the component name `OCM2X`, while the `y` motor gets the name `OCM2Y` and the `z` motor gets `OCM2Z`. Thus, you need to choose the lines (by commenting them) such that the correspnding `COMPONENT` name is left.
