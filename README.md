@@ -1,20 +1,29 @@
 # openCM2 hardware
-This is the hardware part of the openCM2 project, the software part can be found under https://github.com/bjks/openCM2_software. 
 
-![Micromanipulator with Joystick, Microscope and Raspi](./imgs/overview.jpg)
+###Before you start:
 
-The hardware part should be flashed on the ESP32 microcontrollers in order to interpret signals from the MQTTserver.
+This is the **hardware-controlling** part of the openCM2-project, the **software** part can be found **[here](https://github.com/bjks/openCM2_software)**.
+
+![Micromanipulator with Joystick, Microscope and Raspi](./imgs/overview.jpeg)
+
+Our project aims to control an [open flexure block stage](https://openflexure.org/projects/blockstage/) in combination with [UC2 microscopes](https://github.com/openUC2/UC2-GIT) via bluetooth gaming controller.
+
+
+
+This hardware part contains Arduino scripts to be flashed on the ESP32 microcontrollers in order to interpret signals from the MQTTserver. 
+Please download/clone this part to the computer to flash the scripts via an Arduino IDE to the ESP32 wifi controllers which are connected to the motors. This enables the ESP32 to interpret signals which are sent via the gaming controller to the raspberry and distributed via wifi with an MQTTserver. 
 
 ## 1. The stepper motors
 
 ### 1.1 Connect a stepper motor to the ESP32 
-We use the 28BYJ-48 Stepper Motor in conjunction with the ULN2003 driver. Start by connecting these two components. Now, the driver of the stepper motor is connected to the ESP32 via the pins: 
+We use the 28BYJ-48 Stepper Motor in conjunction with the ULN2003 driver. Start by connecting these two components. Now, the driver of the stepper motor is connected to the ESP32 (NodeMCU) via the pins: 
 - `IN1`: 25
 - `IN2`: 26
 - `IN3`: 27
 - `IN4`: 14
 
-Then the `+` pin needs to be connected to the `5V` pin on the ESP32 and the `-` pin to a `GND` pin on the ESP32.  
+Then the `+` pin needs to be connected to the `5V` pin on the ESP32 and the `-` pin to a `GND` pin on the ESP32.</br>
+**Attention: Do not use the `GND` next to the `5V` pin, rather use `GND` between `G19` and `G21`!**
 
 ### 1.2 Setting up your ESP32
 The ESP32 will run the script provided here to control the stepper motors connected to it. Firstly, you need to flash the script onto you ESP32. The instruction here are for the use of the Ardunio IDE, you are of course welcome to use something else.
@@ -38,7 +47,7 @@ const char *password = "_____________";
 const char *MQTT_SERVER = "_____________";
 ```
 Where you see the placeholder `_____________` you need to write
-- the name of your Wifi (ssid)
+1.  the name of your Wifi (ssid)
 - the password of your Wifi (password)
 - and the ip adress of your Raspberry Pi (MQTT_SERVER) 
 
