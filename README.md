@@ -1,7 +1,7 @@
 # openCM2 hardware
 This is the hardware part of the openCM2 project, the software part can be found under https://github.com/bjks/openCM2_software. 
 
-![Micromanipulator with Joystick, Microscope and Raspi](./imgs/overview.pdf)
+![Micromanipulator with Joystick, Microscope and Raspi](./imgs/overview.jpg)
 
 The hardware part should be flashed on the ESP32 microcontrollers in order to interpret signals from the MQTTserver.
 
